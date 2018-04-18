@@ -182,11 +182,8 @@ def get_goodreads_books(query):  #must be one word, lowercase
 			if unique_ident2 in CACHE_DICTION:
 				page_text2 = CACHE_DICTION[unique_ident2]
 				page_soup2 = BeautifulSoup(page_text2, 'html.parser')
-
-				try:
-					isbn =  page_soup2.find(class_="buttons").find(class_="infoBoxRowItem").text
-				except:
-					isbn = page_soup2.find(class_="buttons").find(class_="infoBoxRowItem")
+				data = find_all(class_ = "infoBoxRowItem")
+				print(data)
    			
 			else: 
 				page_text2 = requests.get(url2).text
@@ -196,19 +193,16 @@ def get_goodreads_books(query):  #must be one word, lowercase
 				fw.write(json_cache)
 				fw.close()
 				page_soup2 = BeautifulSoup(page_text2, 'html.parser')
-
-				try:
-					isbn =  page_soup2.find(class_="buttons").find(class_="infoBoxRowItem").text
-				except:
-					isbn = page_soup2.find(class_="buttons").find(class_="infoBoxRowItem")
+				data = find_all(class_ = "infoBoxRowItem")
+				print(data)
 		except:
 			print("Could not get data")
 		
-		goodreads_data.append(isbn)
+		#goodreads_data.append()
 		
-	return goodreads_data
+	#return goodreads_data[0]
 
-#print(get_goodreads_books('kafka'))
+print(get_goodreads_books('kafka'))
 #print(get_goodreads_reviews('0553213695'))
 
 
