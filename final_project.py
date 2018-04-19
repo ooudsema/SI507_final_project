@@ -346,16 +346,20 @@ def bubble_chart():
 	py.plot(data, filename='Book Reviews')
 
 inp = ""
-while inp != "exit":
-	inp = input("bubble chart, bar graph, dot plot, scatter plot\nSelect a graph for displaying book reviews or enter exit to quit: ") 
-	if "bubble" in inp:
-		bubble_chart()
-	elif "bar" in inp:
-		bar_graph()
-	elif "dot" in inp:
-		dot_plot()
-	elif "scatter" in inp:
-		scatter_plot()
-	else:
-		print("Not a valid input") 
+if __name__ == "__main__":
+	while inp != "exit":
+		inp = input("bubble chart, bar graph, dot plot, scatter plot, new query <search term>\nSelect a graph for displaying book reviews, make a new query, or enter exit to quit: ") 
+		if "bubble" in inp:
+			bubble_chart()
+		elif "bar" in inp:
+			bar_graph()
+		elif "dot" in inp:
+			dot_plot()
+		elif "scatter" in inp:
+			scatter_plot()
+		elif "query" in inp:
+			data = inp.split()[2:]
+			create_database(data)
+		else:
+			print("Not a valid input") 
 

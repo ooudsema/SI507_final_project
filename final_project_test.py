@@ -5,7 +5,6 @@ import requests
 import sqlite3
 
 class TestBooks(unittest.TestCase):
-
 	def testGooglebooks(self):
 		books = final_project.get_googlebooks_titles("Grimm")
 		
@@ -15,18 +14,19 @@ class TestBooks(unittest.TestCase):
 		self.assertIsNot(books,[])
 		self.assertNotEqual(type(books), None)
 
+class TestReviews(unittest.TestCase):
 	def testreviews(self):
 		books = final_project.get_googlebooks_titles("Grimm")
 		reviews = final_project.get_goodreads_reviews(books[0])
-		reviews2 = final_project.get_goodreads_reviews(books[1])
+		arts = final_project.get_nyt_articles("Grimm")
 
 		self.assertGreater(len(str(reviews)),0)
-		self.assertGreater(len(str(reviews2)),0)
 		self.assertNotEqual(type(reviews), dict)
 		self.assertNotEqual(type(reviews), list)
-		self.assertNotEqual(type(reviews2), list)
+		self.assertNotEqual(len(arts),0)
+		self.assertEqual(type(arts), dict)
 
-
+class TestDatabase(unittest.TestCase):
 	def testdatabase(self):
 		conn = sqlite3.connect('books.db')   
 		cur = conn.cursor() 
