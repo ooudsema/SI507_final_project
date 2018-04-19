@@ -152,59 +152,6 @@ def get_goodreads_reviews(isbn):
 			review = page_soup.find(class_ = "readable stacked")
 	return review
 
-def get_goodreads_books(query):  #must be one word, lowercase
-	url = 'https://www.goodreads.com/search?q=' + query 
-	unique_ident = url
-	urls = []
-	goodreads_data = []
-	if unique_ident in CACHE_DICTION:
-		page_text = CACHE_DICTION[unique_ident]
-		page_soup = BeautifulSoup(page_text, 'html.parser')
-		reviews = page_soup.find_all(class_ = "bookTitle")
-		for each in reviews:
-			urls.append(str(each).split()[2].split("=")[1])
-	else: 
-		page_text = requests.get(url).text
-		CACHE_DICTION[unique_ident] = page_text
-		json_cache = json.dumps(CACHE_DICTION)
-		fw = open(CACHE_FNAME,"w")
-		fw.write(json_cache)
-		fw.close()
-		page_soup = BeautifulSoup(page_text, 'html.parser')
-		reviews = page_soup.find_all(class_ = "bookTitle")
-		for each in reviews:
-			urls.append(str(each).split()[2].split("=")[1])
-	
-	for each in urls:
-		url2 = "https://www.goodreads.com" + each[1:]
-		unique_ident2 = url2
-		try:
-			if unique_ident2 in CACHE_DICTION:
-				page_text2 = CACHE_DICTION[unique_ident2]
-				page_soup2 = BeautifulSoup(page_text2, 'html.parser')
-				data = find_all(class_ = "infoBoxRowItem")
-				print(data)
-   			
-			else: 
-				page_text2 = requests.get(url2).text
-				CACHE_DICTION[unique_ident2] = page_text2
-				json_cache = json.dumps(CACHE_DICTION)
-				fw = open(CACHE_FNAME,"w")
-				fw.write(json_cache)
-				fw.close()
-				page_soup2 = BeautifulSoup(page_text2, 'html.parser')
-				data = find_all(class_ = "infoBoxRowItem")
-				print(data)
-		except:
-			print("Could not get data")
-		
-		#goodreads_data.append()
-		
-	#return goodreads_data[0]
-
-print(get_goodreads_books('kafka'))
-#print(get_goodreads_reviews('0553213695'))
-
 
 def get_nyt_articles(query):
 	url = 'https://api.nytimes.com/svc/search/v2/articlesearch.json'
@@ -311,30 +258,6 @@ def create_database(query):
 		cur.execute(statement2, insertion)
 		conn.commit()
 
-		data = get_goodreads_books(query)
-		for each in data:
-			sid = SentimentIntensityAnalyzer()
-			reviews = each[1]
-			isbn = each[0]
-			try:
-				scores = sid.polarity_scores(text = reviews)
-				neg = scores['neg']
-				pos = scores['pos']
-				neu = scores['neu']
-				total = scores['compound']
-			except: 
-				scores = None
-				neg = None
-				pos = None
-				neu = None
-				total = None
-			statement3 = "INSERT INTO 'Goodread_Reviews' "
-			statement3 += "VALUES(?,?,?,?,?,?,?)"
-			insertion = (None, isbn, reviews, neg, neu, pos, total)
-			cur.execute(statement3, insertion)
-			conn.commit()
-
-
 	statement = "DROP TABLE IF EXISTS 'NYT_Reviews'"
 	cur.execute(statement)
 	statement = "CREATE TABLE NYT_Reviews('Id' INTEGER PRIMARY KEY AUTOINCREMENT, 'Url' TEXT, 'Review_Title' TEXT, 'Reviewer' TEXT, 'SentimentScore' REAL, 'Date' TEXT, 'Abstract' TEXT)"
@@ -352,17 +275,19 @@ def create_database(query):
 
 conn = sqlite3.connect('books.db')
 cur = conn.cursor()
-statement = "SELECT Books.Title, Compound, Goodread_Reviews.ISBN FROM Books JOIN Goodread_Reviews ON Books.ISBN=Goodread_Reviews.ISBN ORDER BY PublicationDate"
+statement = "SELECT Books.Title, Compound, Goodread_Reviews.ISBN, Books.PublicationDate FROM Books JOIN Goodread_Reviews ON Books.ISBN=Goodread_Reviews.ISBN ORDER BY PublicationDate"
 cur.execute(statement)
 titles = []
 sentiment = []
 nytsentiment = []
 nyt = []
 isbn = []
+dates = []
 for each in cur:
 	titles.append(each[0]) 
 	sentiment.append(each[1])
 	isbn.append(each[2])
+	dates.append(each[3][0:4])
 statement2 = "SELECT Date, Review_Title, SentimentScore FROM NYT_Reviews"
 cur.execute(statement2)
 for each in cur:
@@ -395,12 +320,8 @@ def dot_plot():
 	py.plot(fig, filename='basic_dot-plot')
 
 
-def bubble_chart(dbase):
-	pass
-
 def bar_graph():
 	global sentiment, nytsentiment, titles, isbn, nyt
-	print(titles)
 	trace0 = go.Bar(x=titles,y=sentiment,name='Google Books',marker=dict(color='rgb(49,130,189)'))
 	trace1 = go.Bar(x=nyt,y=nytsentiment,name='NYT Reviews',marker=dict(color='rgb(204,204,204)'))
 
@@ -410,11 +331,31 @@ def bar_graph():
 	fig = go.Figure(data=data, layout=layout)
 	py.plot(fig, filename='Book Reviews')
 
-#create_database('kafka')
+def bubble_chart():
+	global sentiment, titles, dates
+	sents = []
+	for each in sentiment:
+		if each != None:
+			if each < 0:
+				each = each*(-1)
+			sents.append(each*100)
+		else:
+			sents.append(0)
+	trace0 = go.Scatter(x=dates,y=titles,mode='markers',marker=dict(size=sents))
+	data = [trace0]
+	py.plot(data, filename='Book Reviews')
 
-#plot info in plotly
-#I will then graph the number of reviews per books and what site the reviews came from
-# on a scatter plot, a dot plot, a bar graph or a bubble chart.     
+inp = ""
+while inp != "exit":
+	inp = input("bubble chart, bar graph, dot plot, scatter plot\nSelect a graph for displaying book reviews or enter exit to quit: ") 
+	if "bubble" in inp:
+		bubble_chart()
+	elif "bar" in inp:
+		bar_graph()
+	elif "dot" in inp:
+		dot_plot()
+	elif "scatter" in inp:
+		scatter_plot()
+	else:
+		print("Not a valid input") 
 
-#make program interactive
-#create test cases
